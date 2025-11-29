@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { usePrivy } from '@privy-io/react-auth';
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { X } from 'lucide-react';
 
 interface ConnectWalletProps {
@@ -21,14 +21,34 @@ export default function ConnectWallet({
   style = 'default',
   color = 'yellow',
 }: ConnectWalletProps) {
-  const { ready, authenticated, user, login, logout } = usePrivy();
+  const { ready, isLoggedIn, walletAddress, login, logout } = useAuth();
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const truncateAddress = (address: string) => {
     if (address.length <= 8) return address;
-    return `${address.slice(0, 1)}..${address.slice(-1)}`;
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  // Don't render anything until Privy is ready
+  const handleConnect = async () => {
+    setIsConnecting(true);
+    try {
+      await login();
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error disconnecting wallet:', error);
+    }
+  };
+
+  // Don't render anything until kit is ready
   if (!ready) {
     if (style === 'header') {
       return (
@@ -44,22 +64,18 @@ export default function ConnectWallet({
     );
   }
 
-  if (authenticated && user) {
-    // Get the EVM wallet address for display
-    const walletAddress = user.wallet?.address;
-    const displayAddress = walletAddress 
-      ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-      : 'Connected';
+  if (isLoggedIn && walletAddress) {
+    const displayAddress = truncateAddress(walletAddress);
 
     if (style === 'header') {
       return (
         <div className="flex items-stretch space-x-2 h-10">
           <div className={`flex items-center bg-blue-400 text-black px-4 border-2 border-black rounded-none font-pixel uppercase tracking-wider text-xs h-full ${connectedClassName || ''}`}> 
             <span className="hidden md:inline">{displayAddress}</span>
-            <span className="md:hidden">0x</span>
+            <span className="md:hidden">XLM</span>
           </div>
           <button
-            onClick={logout}
+            onClick={handleDisconnect}
             className={`flex items-center justify-center bg-red-500 hover:bg-red-400 text-black px-4 border-2 border-black rounded-none font-pixel uppercase tracking-wider transition-colors text-xs h-full ${disconnectClassName || ''}`}
             style={{ minWidth: '90px' }}
           >
@@ -75,10 +91,10 @@ export default function ConnectWallet({
         <div className={`flex items-center space-x-2 bg-blue-600/20 border border-blue-500/30 px-3 py-2 rounded-lg ${connectedClassName || ''}`}>
           <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
           <span className="text-sm text-blue-300">{displayAddress}</span>
-          <span className="text-xs text-gray-400">FLOW</span>
+          <span className="text-xs text-gray-400">XLM</span>
         </div>
         <button
-          onClick={logout}
+          onClick={handleDisconnect}
           className={`bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition-all ${disconnectClassName || ''}`}
         >
           Disconnect
@@ -96,20 +112,22 @@ export default function ConnectWallet({
       : 'bg-yellow-400 hover:bg-yellow-300 text-black';
     return (
       <button
-        onClick={login}
-        className={`${buttonColor} px-6 py-2 border-2 border-black rounded-none font-pixel uppercase tracking-wider transition-colors ${className || ''}`}
+        onClick={handleConnect}
+        disabled={isConnecting}
+        className={`${buttonColor} px-6 py-2 border-2 border-black rounded-none font-pixel uppercase tracking-wider transition-colors disabled:opacity-50 ${className || ''}`}
       >
-        Connect Wallet
+        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
       </button>
     );
   }
 
   return (
     <button
-      onClick={login}
-      className={`bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-2 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-600 transition-all transform hover:scale-105 ${className || ''}`}
+      onClick={handleConnect}
+      disabled={isConnecting}
+      className={`bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-2 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-600 transition-all transform hover:scale-105 disabled:opacity-50 ${className || ''}`}
     >
-      Connect Wallet
+      {isConnecting ? 'Connecting...' : 'Connect Wallet'}
     </button>
   );
-} 
+}

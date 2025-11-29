@@ -30,6 +30,9 @@ const nextConfig = {
     },
   },
   
+  // Transpile ESM packages
+  transpilePackages: ['@creit.tech/stellar-wallets-kit'],
+  
   // Optimize for API routes
   rewrites: async () => {
     return [
