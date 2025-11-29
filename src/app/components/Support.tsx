@@ -2,9 +2,6 @@
 import React, { useState } from "react";
 import {
   HelpCircle,
-  MessageCircle,
-  Mail,
-  Phone,
   Globe,
   BookOpen,
   Video,
@@ -16,8 +13,7 @@ import {
   Zap,
   Award,
 } from "lucide-react";
-import Button from "./ui/button";
-import { mockFaqs, mockContactMethods, mockHelpResources } from "../data/support";
+import { mockFaqs, mockHelpResources } from "../data/support";
 
 interface FAQItem {
   id: number;
@@ -38,30 +34,6 @@ const Support: React.FC<SupportProps> = ({ faqs = [] }) => {
   const toggleFaq = (id: number) => {
     setExpandedFaq(expandedFaq === id ? null : id);
   };
-
-  const contactMethods = [
-    {
-      icon: <Mail size={24} />,
-      title: mockContactMethods[0].title,
-      description: mockContactMethods[0].description,
-      contact: mockContactMethods[0].contact,
-      action: mockContactMethods[0].action,
-    },
-    {
-      icon: <MessageCircle size={24} />,
-      title: mockContactMethods[1].title,
-      description: mockContactMethods[1].description,
-      contact: mockContactMethods[1].contact,
-      action: mockContactMethods[1].action,
-    },
-    {
-      icon: <Phone size={24} />,
-      title: mockContactMethods[2].title,
-      description: mockContactMethods[2].description,
-      contact: mockContactMethods[2].contact,
-      action: mockContactMethods[2].action,
-    },
-  ];
 
   const helpResources = [
     {
@@ -93,40 +65,6 @@ const Support: React.FC<SupportProps> = ({ faqs = [] }) => {
   return (
     <div className="min-h-screen bg-mauve font-pixel p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="bg-plum border-4 border-black p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <HelpCircle size={32} className="text-gold" />
-              <div>
-                <h1 className="text-3xl font-bold text-cream">Support Center</h1>
-                <p className="text-butter font-pixel">Get help with HackPredict</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-gold text-2xl font-bold">24/7</div>
-              <div className="text-cream text-sm font-pixel">Support Available</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Methods */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {contactMethods.map((method, index) => (
-            <div key={index} className="bg-periwinkle border-4 border-black p-6 text-center">
-              <div className="text-gold mb-4 flex justify-center">
-                {method.icon}
-              </div>
-              <h3 className="text-cream font-bold text-lg mb-2">{method.title}</h3>
-              <p className="text-butter text-sm mb-3">{method.description}</p>
-              <div className="text-gold font-pixel text-sm mb-4">{method.contact}</div>
-              <Button className="bg-gold hover:bg-butter text-black border-2 border-black font-pixel uppercase tracking-wider">
-                {method.action}
-              </Button>
-            </div>
-          ))}
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* FAQ Section */}
           <div className="bg-periwinkle border-4 border-black p-6">
@@ -257,4 +195,4 @@ const Support: React.FC<SupportProps> = ({ faqs = [] }) => {
   );
 };
 
-export default Support; 
+export default Support;

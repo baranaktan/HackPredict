@@ -46,11 +46,17 @@ export default function ClientWrapper({
           theme: 'dark',
           accentColor: '#8B5CF6',
           logo: 'https://res.cloudinary.com/storagemanagementcontainer/image/upload/v1751729735/live-stakes-icon_cfc7t8.png',
+          walletList: ['detected_wallets', 'metamask', 'coinbase_wallet', 'rainbow', 'wallet_connect'],
         },
         defaultChain: stellarTestnet,
         supportedChains: [stellarTestnet],
         embeddedWallets: {
           createOnLogin: 'users-without-wallets',
+        },
+        externalWallets: {
+          coinbaseWallet: {
+            connectionOptions: 'smartWalletOnly',
+          },
         },
       }}
     >
