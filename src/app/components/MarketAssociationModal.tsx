@@ -73,14 +73,38 @@ const MarketAssociationModal: React.FC<MarketAssociationModalProps> = ({
   const loadAssociatedMarkets = async () => {
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
-      const response = await fetch(`${API_BASE_URL}/markets?livestream_id=${livestreamId}`);
+      
+      // Use AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(`${API_BASE_URL}/markets?livestream_id=${livestreamId}`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        console.warn('Markets API returned non-OK status:', response.status);
+        setAssociatedMarkets([]);
+        return;
+      }
+      
       const data = await response.json();
       
       if (data.success) {
         setAssociatedMarkets(data.market_addresses || []);
+      } else {
+        setAssociatedMarkets([]);
       }
-    } catch (err) {
-      console.error('Error loading associated markets:', err);
+    } catch (err: any) {
+      // Gracefully handle network errors (backend not running, etc.)
+      if (err.name === 'AbortError') {
+        console.warn('Markets API request timed out');
+      } else {
+        console.warn('Could not load associated markets (backend may not be running):', err.message);
+      }
+      // Set empty array as fallback - don't crash the UI
+      setAssociatedMarkets([]);
     }
   };
 

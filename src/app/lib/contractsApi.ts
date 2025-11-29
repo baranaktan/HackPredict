@@ -14,11 +14,11 @@ const CONTRACTS = {
     chainId: 1337,
     rpcUrl: 'http://localhost:8545'
   },
-  // Flow EVM Testnet
-  'flow-testnet': {
-    MarketFactory: '0xBa0e5612237c8a7B118E16b6B6C4C2a8dD1f5f1e',
-    chainId: 545,
-    rpcUrl: 'https://testnet.evm.nodes.onflow.org'
+  // Stellar Testnet
+  'stellar-testnet': {
+    MarketFactory: '', // Update after Soroban deployment
+    chainId: 103,
+    rpcUrl: 'https://soroban-testnet.stellar.org'
   },
   // Ethereum Sepolia
   sepolia: {
@@ -29,7 +29,7 @@ const CONTRACTS = {
 };
 
 // Current network - change this to switch networks
-const CURRENT_NETWORK = 'flow-testnet'; // 'localhost' | 'flow-testnet' | 'sepolia'
+const CURRENT_NETWORK = 'stellar-testnet'; // 'localhost' | 'stellar-testnet' | 'sepolia'
 const MARKET_FACTORY_ADDRESS = CONTRACTS[CURRENT_NETWORK].MarketFactory;
 
 // Helper function to get current network config
@@ -47,19 +47,19 @@ export function getNetworkInfo() {
   const config = CONTRACTS[CURRENT_NETWORK];
   const networkNames = {
     localhost: 'Local Development',
-    'flow-testnet': 'Flow EVM Testnet',
+    'stellar-testnet': 'Stellar Testnet',
     sepolia: 'Ethereum Sepolia Testnet'
   };
   
   const explorers = {
     localhost: 'http://localhost:8545',
-    'flow-testnet': 'https://evm-testnet.flowscan.org',
+    'stellar-testnet': 'https://stellar.expert/explorer/testnet',
     sepolia: 'https://sepolia.etherscan.io'
   };
   
   const faucets = {
     localhost: null,
-    'flow-testnet': 'https://testnet-faucet.onflow.org/',
+    'stellar-testnet': 'https://laboratory.stellar.org/account/create?network=testnet',
     sepolia: 'https://sepoliafaucet.com/'
   };
   
@@ -459,7 +459,7 @@ export async function placeBet(
     const signer = await getSigner();
     const contract = new Contract(marketAddress, PREDICTION_MARKET_ABI, signer);
     
-    console.log(`Placing bet: ${amount} FLOW on livestream ${livestreamId}`);
+    console.log(`Placing bet: ${amount} XLM on livestream ${livestreamId}`);
     
     const tx = await contract.placeBet(livestreamId, {
       value: parseEther(amount)
@@ -478,11 +478,11 @@ export async function placeBet(
       if (error.message.includes('user rejected')) {
         throw new Error('Bet cancelled by user');
       } else if (error.message.includes('insufficient funds')) {
-        throw new Error('Insufficient FLOW tokens to place bet');
+        throw new Error('Insufficient XLM tokens to place bet');
       } else if (error.message.includes('execution reverted')) {
         throw new Error('Bet failed - market may be closed or invalid amount');
       } else if (error.message.includes('network')) {
-        throw new Error('Network error - check your connection to Flow EVM testnet');
+        throw new Error('Network error - check your connection to Stellar testnet');
       } else if (error.message.includes('MarketClosed')) {
         throw new Error('This market is closed for betting');
       } else if (error.message.includes('InvalidAmount')) {

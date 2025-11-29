@@ -43,7 +43,7 @@ const BettingIndicator: React.FC<BettingIndicatorProps> = ({ livestreamId, marke
           setHasActiveMarket(true);
           const poolAmount = parseFloat(info.totalPool) || 0;
           setTotalPool(poolAmount);
-          console.log(`✅ BettingIndicator: Active market with pool ${poolAmount} FLOW`);
+          console.log(`✅ BettingIndicator: Active market with pool ${poolAmount} XLM`);
         } else {
           setHasActiveMarket(false);
           setTotalPool(0);
@@ -100,7 +100,7 @@ const BettingIndicator: React.FC<BettingIndicatorProps> = ({ livestreamId, marke
     <div className={`inline-flex items-center gap-1 ${className}`}>
       <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
       <span className="text-xs text-blue-600 font-medium">
-        Active market • {totalPool.toFixed(2)} FLOW
+        Active market • {totalPool.toFixed(2)} XLM
       </span>
     </div>
   );

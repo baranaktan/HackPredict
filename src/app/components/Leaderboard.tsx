@@ -185,7 +185,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ limit = 8 }) => {
                       </div>
                     </td>
                     <td className="py-1 px-1 text-right font-bold">
-                      {formatAmount(entry.totalVolume)} FLOW
+                      {formatAmount(entry.totalVolume)} XLM
                     </td>
                     <td className="py-1 px-1 text-right">
                       {entry.totalBets}

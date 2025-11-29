@@ -5,28 +5,28 @@ import React from 'react';
 import { AuthProvider } from "../../context/AuthContext";
 import { PrivyProvider } from "@privy-io/react-auth";
 
-// Flow EVM Testnet configuration
-const flowEvmTestnet = {
-  id: 545,
-  name: 'Flow EVM Testnet',
-  network: 'flow-testnet',
+// Stellar Testnet configuration
+const stellarTestnet = {
+  id: 103, // Stellar testnet identifier
+  name: 'Stellar Testnet',
+  network: 'stellar-testnet',
   nativeCurrency: {
-    decimals: 18,
-    name: 'Flow',
-    symbol: 'FLOW',
+    decimals: 7,
+    name: 'Stellar Lumens',
+    symbol: 'XLM',
   },
   rpcUrls: {
     default: {
-      http: ['https://testnet.evm.nodes.onflow.org'],
+      http: ['https://soroban-testnet.stellar.org'],
     },
     public: {
-      http: ['https://testnet.evm.nodes.onflow.org'],
+      http: ['https://horizon-testnet.stellar.org'],
     },
   },
   blockExplorers: {
     default: {
-      name: 'Flow EVM Testnet Explorer',
-      url: 'https://evm-testnet.flowscan.io',
+      name: 'Stellar Expert',
+      url: 'https://stellar.expert/explorer/testnet',
     },
   },
   testnet: true,
@@ -47,8 +47,8 @@ export default function ClientWrapper({
           accentColor: '#8B5CF6',
           logo: 'https://res.cloudinary.com/storagemanagementcontainer/image/upload/v1751729735/live-stakes-icon_cfc7t8.png',
         },
-        defaultChain: flowEvmTestnet,
-        supportedChains: [flowEvmTestnet],
+        defaultChain: stellarTestnet,
+        supportedChains: [stellarTestnet],
         embeddedWallets: {
           createOnLogin: 'users-without-wallets',
         },

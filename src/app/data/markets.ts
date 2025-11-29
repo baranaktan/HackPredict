@@ -17,7 +17,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Eth Global",
     website: "https://ethglobal.com",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000001",
     prizes: [
       {
         title: "Best Project",
@@ -46,7 +46,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "LayerZero",
     website: "https://layerzero.network",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000002",
     prizes: [
       {
         title: "Best Omnichain Interaction",
@@ -75,7 +75,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "1inch",
     website: "https://1inch.io",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000003",
     prizes: [
       {
         title: "Non‑EVM Extensions for 1inch Cross‑Chain Swap (Fusion+)",
@@ -104,7 +104,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Worldcoin",
     website: "https://world.org",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000004",
     prizes: [
       {
         title: "Best Mini App",
@@ -134,7 +134,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Oasis Protocol",
     website: "https://oasis.net",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000005",
     prizes: [
       {
         title: "Build on Oasis Stack",
@@ -164,7 +164,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Zircuit",
     website: "https://zircuit.com",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000006",
     prizes: [
       {
         title: "Best Project Deployed on Zircuit",
@@ -191,7 +191,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Chainlink",
     website: "https://chain.link",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000007",
     prizes: [
       {
         title: "Best usage of Chainlink CCIP and/or CCT",
@@ -218,7 +218,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Flare",
     website: "https://flare.network",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000008",
     prizes: [
       {
         title: "Main Track",
@@ -247,7 +247,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Hedera",
     website: "https://hedera.com",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000009",
     prizes: [
       {
         title: "AI on Hedera",
@@ -275,7 +275,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Ledger",
     website: "https://ledger.com",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x000000000000000000000000000000000000000a",
     prizes: [
       {
         title: "Clear Signing (ERC‑7730)",
@@ -303,7 +303,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Ledger",
     website: "https://ledger.com",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x000000000000000000000000000000000000000b",
     prizes: [
       {
         title: "Hardware Integrations",
@@ -331,7 +331,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Avail",
     website: "https://availproject.org",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x000000000000000000000000000000000000000c",
     prizes: [
       {
         title: "Best use of Avail Nexus SDK for Gaming, DeFi, RWAs, Stablecoins",
@@ -344,8 +344,8 @@ export const mockMarkets: MarketDataType[] = [
   },
   {
     id: 13,
-    title: "Flow - Best Killer App",
-    description: "Predict the winner of Flow's Best Killer App challenge.",
+    title: "Stellar - Best Killer App",
+    description: "Predict the winner of Stellar's Best Killer App challenge.",
     creator_wallet_address: "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
     status: "scheduled",
     start_time: "2025-07-12T09:00:00Z",
@@ -356,12 +356,12 @@ export const mockMarkets: MarketDataType[] = [
     participants: 0,
     odds: "",
     prediction: "",
-    sponsor: "Flow",
-    website: "https://flow.com",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    sponsor: "Stellar",
+    website: "https://stellar.org",
+    contract_address: "0x000000000000000000000000000000000000000d",
     prizes: [
       {
-        title: "Best Killer App on Flow",
+        title: "Best Killer App on Stellar",
         total: 6000,
         breakdown: [
           { place: "1st", amount: 3500 },
@@ -387,7 +387,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Circle",
     website: "https://circle.com",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x000000000000000000000000000000000000000e",
     prizes: [
       {
         title: "Build a Multichain USDC Payment System",
@@ -415,7 +415,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "ENS",
     website: "https://ens.domains",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x000000000000000000000000000000000000000f",
     prizes: [
       {
         title: "Most Creative Use Case",
@@ -442,7 +442,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Walrus",
     website: "https://walrus.xyz",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000010",
     prizes: [
       {
         title: "Best app using Walrus for storage",
@@ -469,7 +469,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "The Graph",
     website: "https://thegraph.com",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000011",
     prizes: [
       {
         title: "Best Use of GRC‑20‑ts Library in a Dapp",
@@ -496,7 +496,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Self Protocol",
     website: "https://self.xyz",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000012",
     prizes: [
       {
         title: "Best Self onchain SDK Integration",
@@ -525,7 +525,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Artificial Superintelligence Alliance",
     website: "https://superintelligence.io",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000013",
     prizes: [
       {
         title: "Innovator's Edge: most impactful AI Agent",
@@ -554,7 +554,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Privy",
     website: "https://privy.io",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000014",
     prizes: [
       {
         title: "Best Consumer App Built on Privy",
@@ -581,7 +581,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Fluence",
     website: "https://fluence.network",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000015",
     prizes: [
       {
         title: "Best Use of Fluence Virtual Servers in AI",
@@ -608,7 +608,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Saga",
     website: "https://saga.xyz",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000016",
     prizes: [
       {
         title: "Best dApp built on Saga Chain",
@@ -637,7 +637,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Hardhat",
     website: "https://hardhat.org",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000017",
     prizes: [
       {
         title: "Best Hardhat Plugin",
@@ -664,7 +664,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "INTMAX",
     website: "https://intmax.io",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000018",
     prizes: [
       {
         title: "Best ZK App on INTMAX",
@@ -692,7 +692,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Euler Labs",
     website: "https://euler.finance",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x0000000000000000000000000000000000000019",
     prizes: [
       {
         title: "Best DeFi Integration",
@@ -719,7 +719,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Mantle",
     website: "https://mantle.xyz",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x000000000000000000000000000000000000001a",
     prizes: [
       {
         title: "Best L2 App on Mantle",
@@ -747,7 +747,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Mantle",
     website: "https://mantle.xyz",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x000000000000000000000000000000000000001b",
     prizes: [
       {
         title: "Best Gaming App on Mantle",
@@ -775,7 +775,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Ronin",
     website: "https://roninchain.com",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x000000000000000000000000000000000000001c",
     prizes: [
       {
         title: "Best Gaming Integration",
@@ -802,7 +802,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Ethereum Foundation",
     website: "https://zkmopro.org",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x000000000000000000000000000000000000001d",
     prizes: [
       {
         title: "ZK Mo Pro Challenge",
@@ -830,7 +830,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "0G",
     website: "https://0g.network",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x000000000000000000000000000000000000001e",
     prizes: [
       {
         title: "Best AI x Web3 App on 0G",
@@ -858,7 +858,7 @@ export const mockMarkets: MarketDataType[] = [
     prediction: "",
     sponsor: "Katana",
     website: "https://katana.network",
-    contract_address: "0x1234567890123456789012345678901234567890",
+    contract_address: "0x000000000000000000000000000000000000001f",
     prizes: [
       {
         title: "Best Cross-Chain App on Katana",

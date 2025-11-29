@@ -37,7 +37,7 @@ export const HomeModalContent: React.FC = () => (
         <div className="w-full border-2 border-black bg-periwinkle p-2 rounded shadow-window-pixel">
           <div className="bg-cream p-2 rounded text-left">
             <div className="text-plum font-bold text-base sm:text-lg mb-1">Why join?</div>
-            <div className="text-blue-600 text-[11px] sm:text-xs leading-tight">Earn FLOW, climb the leaderboard, and engage with hackathons in a new way. No crypto experience needed—just connect and play!</div>
+            <div className="text-blue-600 text-[11px] sm:text-xs leading-tight">Earn XLM, climb the leaderboard, and engage with hackathons in a new way. No crypto experience needed—just connect and play!</div>
           </div>
         </div>
       </div>

@@ -75,7 +75,7 @@ export default function ConnectWallet({
         <div className={`flex items-center space-x-2 bg-blue-600/20 border border-blue-500/30 px-3 py-2 rounded-lg ${connectedClassName || ''}`}>
           <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
           <span className="text-sm text-blue-300">{displayAddress}</span>
-          <span className="text-xs text-gray-400">FLOW</span>
+          <span className="text-xs text-gray-400">XLM</span>
         </div>
         <button
           onClick={logout}

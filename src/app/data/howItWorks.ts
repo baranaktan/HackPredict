@@ -13,7 +13,7 @@ export const mockSteps: Step[] = [
   {
     icon: "💸",
     title: "2. Place Your Bets",
-    description: "Bet on outcomes using your custom coin or FLOW."
+    description: "Bet on outcomes using your custom coin or XLM."
   },
   {
     icon: "🎉",

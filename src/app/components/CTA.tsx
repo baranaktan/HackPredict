@@ -27,7 +27,7 @@ const CTA = () => (
         </h2>
 
         <p className="text-xs sm:text-sm mb-8">
-          Join thousands of users already stacking FLOW just by watching hacks
+          Join thousands of users already stacking XLM just by watching hacks
         </p>
 
         <button className="inline-block bg-plum hover:bg-blue-800 text-cream border-2 border-black px-8 py-3 rounded-none uppercase tracking-wider transition-transform active:translate-y-0.5">

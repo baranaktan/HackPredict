@@ -51,7 +51,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
   // Betting state
   const [selectedLivestreamId, setSelectedLivestreamId] = useState<number | null>(null);
   const [betAmount, setBetAmount] = useState<string>('0.1');
-  const [sliderValue, setSliderValue] = useState<number>(10); // 10 = 0.1 FLOW
+  const [sliderValue, setSliderValue] = useState<number>(10); // 10 = 0.1 XLM
   const [isPlacingBet, setIsPlacingBet] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   
@@ -164,20 +164,20 @@ const BettingModal: React.FC<BettingModalProps> = ({
     }
   };
 
-  // Convert slider value to FLOW amount
-  const convertSliderToFlow = (value: number) => {
+  // Convert slider value to XLM amount
+  const convertSliderToXlm = (value: number) => {
     // Slider range: 1-100
-    // FLOW range: 0.01-10.0
-    const flowAmount = (value / 100) * 10; // Max 10 FLOW
-    return Math.max(0.01, flowAmount); // Min 0.01 FLOW
+    // XLM range: 0.01-10.0
+    const xlmAmount = (value / 100) * 10; // Max 10 XLM
+    return Math.max(0.01, xlmAmount); // Min 0.01 XLM
   };
 
   // Handle slider change
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     setSliderValue(value);
-    const flowAmount = convertSliderToFlow(value);
-    setBetAmount(flowAmount.toFixed(2));
+    const xlmAmount = convertSliderToXlm(value);
+    setBetAmount(xlmAmount.toFixed(2));
   };
 
   // Handle direct amount input
@@ -186,8 +186,8 @@ const BettingModal: React.FC<BettingModalProps> = ({
     setBetAmount(value);
     
     // Update slider to match
-    const flowValue = parseFloat(value) || 0;
-    const sliderVal = Math.min(100, Math.max(1, (flowValue / 10) * 100));
+    const xlmValue = parseFloat(value) || 0;
+    const sliderVal = Math.min(100, Math.max(1, (xlmValue / 10) * 100));
     setSliderValue(sliderVal);
   };
 
@@ -202,7 +202,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
       setError(null);
       setSuccess(null);
 
-      console.log(`🎯 Placing bet: ${betAmount} FLOW on livestream ${livestreamId} in market ${selectedMarketId}`);
+      console.log(`🎯 Placing bet: ${betAmount} XLM on livestream ${livestreamId} in market ${selectedMarketId}`);
       
       const txHash = await placeBet(selectedMarketId.toString(), livestreamId, betAmount);
       
@@ -405,7 +405,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
                 <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2">{marketInfo.question}</h3>
                 <div className="flex flex-wrap gap-2 text-xs">
                   <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                    Pool: {parseFloat(marketInfo.totalPool).toFixed(2)} FLOW
+                    Pool: {parseFloat(marketInfo.totalPool).toFixed(2)} XLM
                   </span>
                   <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">
                     Bettors: {marketInfo.totalBettors}
@@ -423,7 +423,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
               {/* Bet Amount */}
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                  Bet Amount (FLOW)
+                  Bet Amount (XLM)
                 </label>
                 <div className="space-y-3">
                   <input
@@ -446,8 +446,8 @@ const BettingModal: React.FC<BettingModalProps> = ({
                       className="w-full slider"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>0.01 FLOW</span>
-                      <span>10 FLOW</span>
+                      <span>0.01 XLM</span>
+                      <span>10 XLM</span>
                     </div>
                   </div>
                 </div>
@@ -508,7 +508,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
                     {userBets.livestreamIds.map((id, index) => (
                       <div key={index} className="flex justify-between text-xs">
                         <span>Project {id}:</span>
-                        <span className="font-medium">{userBets.amounts[index]} FLOW</span>
+                        <span className="font-medium">{userBets.amounts[index]} XLM</span>
                       </div>
                     ))}
                   </div>
@@ -517,28 +517,28 @@ const BettingModal: React.FC<BettingModalProps> = ({
             </div>
           )}
 
-          {/* ETHGlobal Faucet Button */}
+          {/* Stellar Faucet Button */}
           <div className="mt-2 flex justify-center">
             <a
-              href="https://ethglobal.com/faucet"
+              href="https://laboratory.stellar.org/account/create?network=testnet"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block px-4 py-2 bg-blue-600 text-white rounded font-semibold shadow hover:bg-blue-700 transition-colors border border-blue-700 flex items-center gap-2"
             >
-              <img src="https://cdn.prod.website-files.com/64b8433b6f2d35c03d44ffc0/64ca7d6fe695a4527633da1a_Group%2047467.png" alt="Flow Logo" style={{ height: '20px', width: '20px' }} />
-              Get Flow Testnet Tokens
+              <img src="/solana-logo.svg" alt="Stellar Logo" style={{ height: '20px', width: '20px' }} />
+              Get Stellar Testnet XLM
             </a>
           </div>
 
-          {/* Faucet Link for Flow */}
+          {/* Faucet Link for Stellar */}
           <div className="mt-4 text-center">
             <a
-              href="https://faucet.testnet.onflow.org/"
+              href="https://laboratory.stellar.org/account/create?network=testnet"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs font-semibold border border-blue-300"
             >
-              Need testnet FLOW? Get some from the Flow Faucet
+              Need testnet XLM? Get some from Stellar Friendbot
             </a>
           </div>
 

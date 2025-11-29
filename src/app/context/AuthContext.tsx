@@ -23,9 +23,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (authenticated && user?.wallet?.address) {
       setWalletAddress(user.wallet.address);
-      // Flow EVM Testnet chain ID is 545
+      // Stellar Testnet chain ID is 103
       const currentChainId = user.wallet.chainId;
-      setChainId(typeof currentChainId === 'string' ? parseInt(currentChainId) : (currentChainId || 545));
+      setChainId(typeof currentChainId === 'string' ? parseInt(currentChainId) : (currentChainId || 103));
     } else {
       setWalletAddress(null);
       setChainId(null);

@@ -151,7 +151,7 @@ router.get('/markets', async (req, res) => {
 
 // Get provider for blockchain interactions
 function getProvider() {
-  const rpcUrl = process.env.FLOW_RPC_URL || 'https://testnet.evm.nodes.onflow.org';
+  const rpcUrl = process.env.STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org';
   return new JsonRpcProvider(rpcUrl);
 }
 
