@@ -12,6 +12,11 @@ import {
   Account
 } from '@stellar/stellar-sdk';
 
+// Transaction status constants
+const TX_STATUS_NOT_FOUND = 'NOT_FOUND';
+const TX_STATUS_PENDING = 'PENDING';
+const TX_STATUS_SUCCESS = 'SUCCESS';
+
 // Type aliases for better TypeScript support
 type ScVal = xdr.ScVal;
 import { mockLivestreams } from '../data/livestreams';
@@ -175,7 +180,7 @@ async function signAndSend(
   
   // Build the transaction
   const sourceAccount = await server.getAccount(userAddress);
-  const tx = new SorobanRpc.TransactionBuilder(sourceAccount, {
+  const tx = new TransactionBuilder(sourceAccount, {
     fee: '100',
     networkPassphrase: getNetworkPassphrase(),
   })
@@ -183,14 +188,15 @@ async function signAndSend(
     .setTimeout(30)
     .build();
 
-  // Sign with Freighter
-  if (window.freighterApi) {
-    const signed = await window.freighterApi.signTransaction(tx.toXDR(), {
-      network: getNetworkPassphrase(),
-      accountToSign: userAddress,
+  // Sign with Stellar Wallet Kit
+  const kit = (window as any).stellarWalletsKit;
+  if (kit) {
+    const { signedTxXdr } = await kit.signTransaction(tx.toXDR(), {
+      networkPassphrase: getNetworkPassphrase(),
+      address: userAddress,
     });
     
-    const txResponse = await server.sendTransaction(signed);
+    const txResponse = await server.sendTransaction(signedTxXdr);
     
     if (txResponse.status === 'ERROR') {
       throw new Error(txResponse.errorResult?.toString() || 'Transaction failed');
@@ -263,9 +269,6 @@ export async function createMarket(
     // Get oracle address (for now, use user address as oracle)
     const oracleAddress = userAddress;
     
-    // Create factory contract instance
-    const factoryContract = new Contract(CONTRACTS.MarketFactory);
-    
     // Convert parameters to ScVal
     const livestreamIdsScVal = nativeToScVal(livestreamIds.map(id => BigInt(id)), { type: 'vec' });
     const questionScVal = nativeToScVal(question);
@@ -278,31 +281,23 @@ export async function createMarket(
     const server = getRpcServer();
     const sourceAccount = await server.getAccount(userAddress);
     
-    // Build contract invocation
-    const contractAddress = new Address(CONTRACTS.MarketFactory);
-    const contractOp = Operation.invokeHostFunction({
-      func: xdr.HostFunction.hostFunctionTypeInvokeContract(
-        xdr.InvokeContractArgs({
-          contractAddress: contractAddress.toScAddress(),
-          functionName: xdr.ScSymbol.fromString('create_market'),
-          args: [
-            nativeToScVal(userAddress),
-            livestreamIdsScVal,
-            questionScVal,
-            livestreamTitlesScVal,
-            nativeToScVal(wasmHash)
-          ]
-        })
-      ),
-      auth: []
-    });
+    // Build contract invocation using Contract.call()
+    const factoryContract = new Contract(CONTRACTS.MarketFactory);
+    const contractCall = factoryContract.call(
+      'create_market',
+      nativeToScVal(userAddress),
+      livestreamIdsScVal,
+      questionScVal,
+      livestreamTitlesScVal,
+      nativeToScVal(wasmHash)
+    );
     
     // Call create_market function
     const tx = new TransactionBuilder(sourceAccount, {
       fee: '100',
       networkPassphrase: getNetworkPassphrase(),
     })
-      .addOperation(contractOp)
+      .addOperation(contractCall)
       .setTimeout(30)
       .build();
 
@@ -325,14 +320,17 @@ export async function createMarket(
       
       // Wait for transaction to complete
       let txResult = await server.getTransaction(txResponse.hash);
-      while (txResult.status === 'NOT_FOUND' || txResult.status === 'PENDING') {
+      while ((txResult.status as string) === 'NOT_FOUND' || (txResult.status as string) === 'PENDING') {
         await new Promise(resolve => setTimeout(resolve, 1000));
         txResult = await server.getTransaction(txResponse.hash);
       }
       
-      if (txResult.status === 'SUCCESS' && txResult.resultXdr) {
+      if (txResult.status === 'SUCCESS' && 'resultXdr' in txResult && txResult.resultXdr) {
         // Parse the result to get market address
-        const result = scValToNative(txResult.resultXdr);
+        const resultXdrBuffer = typeof txResult.resultXdr === 'string' 
+          ? Buffer.from(txResult.resultXdr, 'base64')
+          : (txResult.resultXdr as unknown as Buffer);
+        const result = scValToNative(xdr.ScVal.fromXDR(resultXdrBuffer));
         const marketAddress = result.toString();
         
         console.log('✅ Market created at address:', marketAddress);
@@ -446,19 +444,10 @@ export async function createMarketWithMetadata(
 export async function getMarketInfo(marketAddress: string): Promise<MarketInfo> {
   try {
     const server = getRpcServer();
-    const contractAddress = new Address(marketAddress);
+    const contract = new Contract(marketAddress);
     
-    // Build contract invocation for get_market_info
-    const contractOp = Operation.invokeHostFunction({
-      func: xdr.HostFunction.hostFunctionTypeInvokeContract(
-        xdr.InvokeContractArgs({
-          contractAddress: contractAddress.toScAddress(),
-          functionName: xdr.ScSymbol.fromString('get_market_info'),
-          args: []
-        })
-      ),
-      auth: []
-    });
+    // Build contract invocation for get_market_info using Contract.call()
+    const contractCall = contract.call('get_market_info');
     
     // Create a dummy account for simulation (read-only)
     const dummyAccount = new Account('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF', '0');
@@ -466,22 +455,23 @@ export async function getMarketInfo(marketAddress: string): Promise<MarketInfo> 
       fee: '100',
       networkPassphrase: getNetworkPassphrase(),
     })
-      .addOperation(contractOp)
+      .addOperation(contractCall)
       .setTimeout(30)
       .build();
     
     // Simulate the transaction
     const response = await server.simulateTransaction(tx);
     
-    if (response.errorResult) {
+    // Type guard for SimulateTransactionResponse
+    if ('errorResult' in response && response.errorResult) {
       throw new Error(response.errorResult.toString());
     }
     
-    if (!response.result) {
+    if (!('result' in response) || !response.result) {
       throw new Error('No result from contract call');
     }
     
-    const data = scValToNative(response.result);
+    const data = scValToNative(response.result.retval);
     
     // Parse the tuple result: (Vec<u64>, String, State, u64, i128, u64)
     const livestreamIds = (data[0] as bigint[]).map(id => Number(id));
@@ -531,38 +521,30 @@ export async function placeBet(
     console.log(`Placing bet: ${amount} XLM on livestream ${livestreamId}`);
     
     const sourceAccount = await server.getAccount(userAddress);
-    const contractAddress = new Address(marketAddress);
-    const contractOp = Operation.invokeHostFunction({
-      func: xdr.HostFunction.hostFunctionTypeInvokeContract(
-        xdr.InvokeContractArgs({
-          contractAddress: contractAddress.toScAddress(),
-          functionName: xdr.ScSymbol.fromString('place_bet'),
-          args: [
-            nativeToScVal(userAddress),
-            nativeToScVal(BigInt(livestreamId)),
-            nativeToScVal(amountInStroops)
-          ]
-        })
-      ),
-      auth: []
-    });
+    const contractCall = contract.call(
+      'place_bet',
+      nativeToScVal(userAddress),
+      nativeToScVal(BigInt(livestreamId)),
+      nativeToScVal(amountInStroops)
+    );
     
     const tx = new TransactionBuilder(sourceAccount, {
       fee: '100',
       networkPassphrase: getNetworkPassphrase(),
     })
-      .addOperation(contractOp)
+      .addOperation(contractCall)
       .setTimeout(30)
       .build();
 
-    // Sign with Freighter wallet
-    if (window.freighterApi) {
-      const signed = await window.freighterApi.signTransaction(tx.toXDR(), {
-        network: getNetworkPassphrase(),
-        accountToSign: userAddress,
+    // Sign with Stellar Wallet Kit
+    const kit = (window as any).stellarWalletsKit;
+    if (kit) {
+      const { signedTxXdr } = await kit.signTransaction(tx.toXDR(), {
+        networkPassphrase: getNetworkPassphrase(),
+        address: userAddress,
       });
       
-      const txResponse = await server.sendTransaction(signed);
+      const txResponse = await server.sendTransaction(signedTxXdr);
       
       if (txResponse.status === 'ERROR') {
         throw new Error(txResponse.errorResult?.toString() || 'Transaction failed');
@@ -608,32 +590,25 @@ export async function getUserBets(marketAddress: string, userAddress: string): P
     
     // Fetch bet for each livestream
     for (const livestreamId of marketInfo.livestreamIds) {
-      const contractOp = Operation.invokeHostFunction({
-        func: xdr.HostFunction.hostFunctionTypeInvokeContract(
-          xdr.InvokeContractArgs({
-            contractAddress: contractAddress.toScAddress(),
-            functionName: xdr.ScSymbol.fromString('get_user_bet'),
-            args: [
-              nativeToScVal(userAddr),
-              nativeToScVal(BigInt(livestreamId))
-            ]
-          })
-        ),
-        auth: []
-      });
+      const contract = new Contract(marketAddress);
+      const contractCall = contract.call(
+        'get_user_bet',
+        nativeToScVal(userAddr),
+        nativeToScVal(BigInt(livestreamId))
+      );
       
       const tx = new TransactionBuilder(dummyAccount, {
         fee: '100',
         networkPassphrase: getNetworkPassphrase(),
       })
-        .addOperation(contractOp)
+        .addOperation(contractCall)
         .setTimeout(30)
         .build();
       
       const response = await server.simulateTransaction(tx);
       
-      if (!response.errorResult && response.result) {
-        const betAmount = scValToNative(response.result) as bigint;
+      if (!('errorResult' in response) && 'result' in response && response.result) {
+        const betAmount = scValToNative(response.result.retval) as bigint;
         if (betAmount > BigInt(0)) {
           livestreamIds.push(livestreamId);
           amounts.push((Number(betAmount) / 10000000).toString()); // Convert stroops to XLM
@@ -659,29 +634,24 @@ export async function getMarketOdds(marketAddress: string): Promise<MarketOdds> 
     const dummyAccount = new Account('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF', '0');
     
     for (const livestreamId of marketInfo.livestreamIds) {
-      const contractOp = Operation.invokeHostFunction({
-        func: xdr.HostFunction.hostFunctionTypeInvokeContract(
-          xdr.InvokeContractArgs({
-            contractAddress: contractAddress.toScAddress(),
-            functionName: xdr.ScSymbol.fromString('get_livestream_bets'),
-            args: [nativeToScVal(BigInt(livestreamId))]
-          })
-        ),
-        auth: []
-      });
+      const contract = new Contract(marketAddress);
+      const contractCall = contract.call(
+        'get_livestream_bets',
+        nativeToScVal(BigInt(livestreamId))
+      );
       
       const tx = new TransactionBuilder(dummyAccount, {
         fee: '100',
         networkPassphrase: getNetworkPassphrase(),
       })
-        .addOperation(contractOp)
+        .addOperation(contractCall)
         .setTimeout(30)
         .build();
       
       const response = await server.simulateTransaction(tx);
       
-      if (!response.errorResult && response.result) {
-        const data = scValToNative(response.result);
+      if (!('errorResult' in response) && 'result' in response && response.result) {
+        const data = scValToNative(response.result.retval);
         const amount = (data[0] as bigint).toString();
         const percentage = Number(data[1]);
         const isActive = data[2] as boolean;
@@ -716,35 +686,28 @@ export async function getPotentialPayout(
     const dummyAccount = new Account('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF', '0');
     
     // Get user bet
-    const userBetOp = Operation.invokeHostFunction({
-      func: xdr.HostFunction.hostFunctionTypeInvokeContract(
-        xdr.InvokeContractArgs({
-          contractAddress: contractAddress.toScAddress(),
-          functionName: xdr.ScSymbol.fromString('get_user_bet'),
-          args: [
-            nativeToScVal(userAddr),
-            nativeToScVal(BigInt(livestreamId))
-          ]
-        })
-      ),
-      auth: []
-    });
+    const contract = new Contract(marketAddress);
+    const userBetCall = contract.call(
+      'get_user_bet',
+      nativeToScVal(userAddr),
+      nativeToScVal(BigInt(livestreamId))
+    );
     
     const userBetTx = new TransactionBuilder(dummyAccount, {
       fee: '100',
       networkPassphrase: getNetworkPassphrase(),
     })
-      .addOperation(userBetOp)
+      .addOperation(userBetCall)
       .setTimeout(30)
       .build();
     
     const userBetResponse = await server.simulateTransaction(userBetTx);
     
-    if (userBetResponse.errorResult || !userBetResponse.result) {
+    if (('errorResult' in userBetResponse && userBetResponse.errorResult) || !('result' in userBetResponse) || !userBetResponse.result) {
       return '0';
     }
     
-    const userBet = scValToNative(userBetResponse.result) as bigint;
+    const userBet = scValToNative(userBetResponse.result.retval) as bigint;
     if (userBet === BigInt(0)) return '0';
     
     // Get market info
@@ -752,32 +715,26 @@ export async function getPotentialPayout(
     const totalPool = BigInt(marketInfo.totalPool);
     
     // Get livestream bets
-    const livestreamBetsOp = Operation.invokeHostFunction({
-      func: xdr.HostFunction.hostFunctionTypeInvokeContract(
-        xdr.InvokeContractArgs({
-          contractAddress: contractAddress.toScAddress(),
-          functionName: xdr.ScSymbol.fromString('get_livestream_bets'),
-          args: [nativeToScVal(BigInt(livestreamId))]
-        })
-      ),
-      auth: []
-    });
+    const livestreamBetsCall = contract.call(
+      'get_livestream_bets',
+      nativeToScVal(BigInt(livestreamId))
+    );
     
     const livestreamBetsTx = new TransactionBuilder(dummyAccount, {
       fee: '100',
       networkPassphrase: getNetworkPassphrase(),
     })
-      .addOperation(livestreamBetsOp)
+      .addOperation(livestreamBetsCall)
       .setTimeout(30)
       .build();
     
     const livestreamBetsResponse = await server.simulateTransaction(livestreamBetsTx);
     
-    if (livestreamBetsResponse.errorResult || !livestreamBetsResponse.result) {
+    if (('errorResult' in livestreamBetsResponse && livestreamBetsResponse.errorResult) || !('result' in livestreamBetsResponse) || !livestreamBetsResponse.result) {
       return '0';
     }
     
-    const livestreamData = scValToNative(livestreamBetsResponse.result);
+    const livestreamData = scValToNative(livestreamBetsResponse.result.retval);
     const livestreamPool = livestreamData[0] as bigint;
     
     if (livestreamPool === BigInt(0)) return '0';
@@ -797,34 +754,29 @@ export async function claimPayout(marketAddress: string): Promise<string> {
     const userAddress = await getUserPublicKey();
     const server = getRpcServer();
     const sourceAccount = await server.getAccount(userAddress);
-    const contractAddress = new Address(marketAddress);
-    const contractOp = Operation.invokeHostFunction({
-      func: xdr.HostFunction.hostFunctionTypeInvokeContract(
-        xdr.InvokeContractArgs({
-          contractAddress: contractAddress.toScAddress(),
-          functionName: xdr.ScSymbol.fromString('claim_payout'),
-          args: [nativeToScVal(userAddress)]
-        })
-      ),
-      auth: []
-    });
+    const contract = new Contract(marketAddress);
+    const contractCall = contract.call(
+      'claim_payout',
+      nativeToScVal(userAddress)
+    );
     
     const tx = new TransactionBuilder(sourceAccount, {
       fee: '100',
       networkPassphrase: getNetworkPassphrase(),
     })
-      .addOperation(contractOp)
+      .addOperation(contractCall)
       .setTimeout(30)
       .build();
 
-    // Sign with Freighter wallet
-    if (window.freighterApi) {
-      const signed = await window.freighterApi.signTransaction(tx.toXDR(), {
-        network: getNetworkPassphrase(),
-        accountToSign: userAddress,
+    // Sign with Stellar Wallet Kit
+    const kit = (window as any).stellarWalletsKit;
+    if (kit) {
+      const { signedTxXdr } = await kit.signTransaction(tx.toXDR(), {
+        networkPassphrase: getNetworkPassphrase(),
+        address: userAddress,
       });
       
-      const txResponse = await server.sendTransaction(signed);
+      const txResponse = await server.sendTransaction(signedTxXdr);
       
       if (txResponse.status === 'ERROR') {
         throw new Error(txResponse.errorResult?.toString() || 'Transaction failed');
@@ -878,58 +830,38 @@ export async function testContractConnection(): Promise<{
 }> {
   try {
     const server = getRpcServer();
-    const contractAddress = new Address(CONTRACTS.MarketFactory);
+    const contract = new Contract(CONTRACTS.MarketFactory);
     const dummyAccount = new Account('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF', '0');
     
-    // Call get_total_market_count
-    const countOp = Operation.invokeHostFunction({
-      func: xdr.HostFunction.hostFunctionTypeInvokeContract(
-        xdr.InvokeContractArgs({
-          contractAddress: contractAddress.toScAddress(),
-          functionName: xdr.ScSymbol.fromString('get_total_market_count'),
-          args: []
-        })
-      ),
-      auth: []
-    });
-    
+    // Call get_total_market_count using Contract.call()
+    const countCall = contract.call('get_total_market_count');
     const countTx = new TransactionBuilder(dummyAccount, {
       fee: '100',
       networkPassphrase: getNetworkPassphrase(),
     })
-      .addOperation(countOp)
+      .addOperation(countCall)
       .setTimeout(30)
       .build();
     
     const countResponse = await server.simulateTransaction(countTx);
     
-    // Call get_owner
-    const ownerOp = Operation.invokeHostFunction({
-      func: xdr.HostFunction.hostFunctionTypeInvokeContract(
-        xdr.InvokeContractArgs({
-          contractAddress: contractAddress.toScAddress(),
-          functionName: xdr.ScSymbol.fromString('get_owner'),
-          args: []
-        })
-      ),
-      auth: []
-    });
-    
+    // Call get_owner using Contract.call()
+    const ownerCall = contract.call('get_owner');
     const ownerTx = new TransactionBuilder(dummyAccount, {
       fee: '100',
       networkPassphrase: getNetworkPassphrase(),
     })
-      .addOperation(ownerOp)
+      .addOperation(ownerCall)
       .setTimeout(30)
       .build();
     
     const ownerResponse = await server.simulateTransaction(ownerTx);
     
-    const totalMarkets = countResponse.result 
-      ? Number(scValToNative(countResponse.result))
+    const totalMarkets = ('result' in countResponse && countResponse.result)
+      ? Number(scValToNative(countResponse.result.retval))
       : 0;
-    const owner = ownerResponse.result 
-      ? scValToNative(ownerResponse.result).toString()
+    const owner = ('result' in ownerResponse && ownerResponse.result)
+      ? scValToNative(ownerResponse.result.retval).toString()
       : '';
     
     return {
