@@ -1,0 +1,78 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/Users/macbookpro/Desktop/wobreeze/projects/hackathon-cannes/livestakes/src/blockchain/contracts/MarketFactory.sol": {
+      "lastModificationDate": 1751739763238,
+      "contentHash": "acf1a622912d3d27016399e9619fbdb0",
+      "sourceName": "contracts/MarketFactory.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./PredictionMarket.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "MarketFactory"
+      ]
+    },
+    "/Users/macbookpro/Desktop/wobreeze/projects/hackathon-cannes/livestakes/src/blockchain/contracts/PredictionMarket.sol": {
+      "lastModificationDate": 1751745340825,
+      "contentHash": "2b89c5961752ca0812c63ea8247dd8e7",
+      "sourceName": "contracts/PredictionMarket.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "IMarketFactory",
+        "PredictionMarket"
+      ]
+    }
+  }
+}
