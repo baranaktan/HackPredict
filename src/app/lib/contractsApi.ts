@@ -77,13 +77,9 @@ export function getNetworkInfo() {
 // Test market address from deployment
 export const TEST_MARKET_ADDRESS = '0x531A0148643e4D5F8Da1F818b16a56b065709D12';
 
-// Contract ABIs - Import from artifacts for accuracy
-import MarketFactoryArtifact from '../../blockchain/artifacts/contracts/MarketFactory.sol/MarketFactory.json';
-import PredictionMarketArtifact from '../../blockchain/artifacts/contracts/PredictionMarket.sol/PredictionMarket.json';
-
-const MARKET_FACTORY_ABI = MarketFactoryArtifact.abi;
-
-const PREDICTION_MARKET_ABI = PredictionMarketArtifact.abi;
+// Note: Stellar Soroban contracts don't use ABIs like EVM contracts
+// Contract interactions are done via Contract.call() method with function names
+// No need for ABI imports
 
 export enum MarketState {
   Open = 0,
