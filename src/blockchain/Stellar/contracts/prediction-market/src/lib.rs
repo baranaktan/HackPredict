@@ -424,12 +424,12 @@ impl PredictionMarket {
 
     /// Get market information
     pub fn get_market_info(env: Env) -> (Vec<u64>, String, State, u64, i128, u64) {
-        let livestream_ids: Vec<u64> = env.storage().instance().get(&DataKey::LivestreamIds).unwrap();
-        let question: String = env.storage().instance().get(&DataKey::Question).unwrap();
-        let state: State = env.storage().instance().get(&DataKey::State).unwrap();
-        let winning_id: u64 = env.storage().instance().get(&DataKey::WinningLivestreamId).unwrap();
-        let total_pool: i128 = env.storage().instance().get(&DataKey::TotalPool).unwrap();
-        let total_bettors: u64 = env.storage().instance().get(&DataKey::TotalBettors).unwrap();
+        let livestream_ids: Vec<u64> = env.storage().instance().get(&DataKey::LivestreamIds).unwrap_or(Vec::new(&env));
+        let question: String = env.storage().instance().get(&DataKey::Question).unwrap_or(String::from_str(&env, ""));
+        let state: State = env.storage().instance().get(&DataKey::State).unwrap_or(State::Open);
+        let winning_id: u64 = env.storage().instance().get(&DataKey::WinningLivestreamId).unwrap_or(0);
+        let total_pool: i128 = env.storage().instance().get(&DataKey::TotalPool).unwrap_or(0);
+        let total_bettors: u64 = env.storage().instance().get(&DataKey::TotalBettors).unwrap_or(0);
         
         (livestream_ids, question, state, winning_id, total_pool, total_bettors)
     }

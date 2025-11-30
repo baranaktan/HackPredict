@@ -1,7 +1,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, Address, Env, String, Vec, BytesN
+    contract, contractimpl, contracttype, Address, Env, String, Vec, BytesN, Symbol, IntoVal
 };
 
 #[contracttype]
@@ -21,6 +21,12 @@ impl MarketFactory {
     /// Initialize the factory
     pub fn initialize(env: Env, owner: Address) {
         owner.require_auth();
+        
+        // Check if already initialized - if Owner exists, contract is already initialized
+        if env.storage().instance().has(&DataKey::Owner) {
+            // Contract is already initialized, just return
+            return;
+        }
         
         env.storage().instance().set(&DataKey::Owner, &owner);
         env.storage().instance().set(&DataKey::AllMarkets, &Vec::<Address>::new(&env));
@@ -42,7 +48,8 @@ impl MarketFactory {
     ) -> Address {
         caller.require_auth();
         
-        let owner: Address = env.storage().instance().get(&DataKey::Owner).unwrap();
+        let owner: Address = env.storage().instance().get(&DataKey::Owner)
+            .expect("Contract not initialized");
         assert!(caller == owner, "Not owner");
         
         assert!(
@@ -55,18 +62,30 @@ impl MarketFactory {
         let salt_hash = env.crypto().sha256(&question_bytes);
         let salt_array = salt_hash.to_array();
         let salt = BytesN::from_array(&env, &salt_array);
+        
+        // Deploy the market contract using the provided WASM hash
+        // The WASM must be installed on the network before calling this
         let market_address = env.deployer()
             .with_current_contract(salt)
             .deploy_v2(wasm_hash, ());
         
-        // Initialize the market (you'll need to add this call to the market contract)
-        // This is a placeholder - actual implementation depends on how you structure initialization
+        // TODO: Cross-contract initialization disabled for now
+        // The market needs to be initialized separately after deployment
+        // This is because cross-contract calls require additional authorization handling
+        // 
+        // Initialize parameters would be:
+        // - livestream_ids, question, livestream_titles, oracle (owner), factory (this contract)
+        //
+        // For now, return the market address and let the frontend handle initialization
+        let _factory_address = env.current_contract_address();
+        let _oracle_address = owner.clone();
         
         // Store market info
         env.storage().persistent().set(&DataKey::ValidMarkets(market_address.clone()), &true);
         env.storage().persistent().set(&DataKey::MarketToLivestreams(market_address.clone()), &livestream_ids);
         
-        let mut all_markets: Vec<Address> = env.storage().instance().get(&DataKey::AllMarkets).unwrap();
+        let mut all_markets: Vec<Address> = env.storage().instance().get(&DataKey::AllMarkets)
+            .unwrap_or(Vec::<Address>::new(&env));
         all_markets.push_back(market_address.clone());
         env.storage().instance().set(&DataKey::AllMarkets, &all_markets);
         
@@ -221,7 +240,7 @@ impl MarketFactory {
         let all_markets: Vec<Address> = env.storage()
             .instance()
             .get(&DataKey::AllMarkets)
-            .unwrap();
+            .unwrap_or(Vec::<Address>::new(&env));
         all_markets.len()
     }
 
@@ -230,9 +249,12 @@ impl MarketFactory {
         let all_markets: Vec<Address> = env.storage()
             .instance()
             .get(&DataKey::AllMarkets)
-            .unwrap();
+            .unwrap_or(Vec::<Address>::new(&env));
         
-        assert!(offset < all_markets.len(), "Offset out of bounds");
+        // Return empty vector if no markets exist or offset is at/beyond end
+        if all_markets.len() == 0 || offset >= all_markets.len() {
+            return Vec::<Address>::new(&env);
+        }
         
         let end = if offset + limit > all_markets.len() {
             all_markets.len()
@@ -310,7 +332,8 @@ impl MarketFactory {
     pub fn transfer_ownership(env: Env, caller: Address, new_owner: Address) {
         caller.require_auth();
         
-        let owner: Address = env.storage().instance().get(&DataKey::Owner).unwrap();
+        let owner: Address = env.storage().instance().get(&DataKey::Owner)
+            .expect("Contract not initialized");
         assert!(caller == owner, "Not owner");
         
         env.storage().instance().set(&DataKey::Owner, &new_owner);
@@ -331,7 +354,8 @@ impl MarketFactory {
 
     /// Get current owner
     pub fn get_owner(env: Env) -> Address {
-        env.storage().instance().get(&DataKey::Owner).unwrap()
+        env.storage().instance().get(&DataKey::Owner)
+            .expect("Contract not initialized")
     }
 }
 

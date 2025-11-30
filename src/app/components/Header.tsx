@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   MonitorPlay,
   Trophy,
@@ -43,12 +44,6 @@ const Header = () => {
     { href: "/chart", icon: <BarChart3 size={16} />, label: "Chart" },
     { href: "/markets", icon: <Store size={16} />, label: "Markets" },
     { href: "/profile", icon: <User size={16} />, label: "" },
-    { 
-      href: "https://evm-testnet.flowscan.org/address/0xBa0e5612237c8a7B118E16b6B6C4C2a8dD1f5f1e", 
-      icon: <FileText size={16} />, 
-      label: "",
-      external: true
-    },
   ];
 
   const socialLinks = [
@@ -68,11 +63,12 @@ const Header = () => {
       <nav className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2" onClick={closeMobileMenu}>
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-cream border-2 border-black rounded-none flex items-center justify-center overflow-hidden">
-            <img 
+          <div className="relative w-10 h-10 sm:w-12 sm:h-12 bg-cream border-2 border-black rounded-none flex items-center justify-center overflow-hidden">
+            <Image 
               src={LIVE_STAKES_LOGO_URL}
               alt="HackPredict Logo"
-              className="w-full h-full object-cover hue-rotate-[85deg] saturate-150"
+              fill
+              className="object-cover hue-rotate-[85deg] saturate-150"
             />
           </div>
           <span className="text-base sm:text-lg font-bold text-yellow-50">HackPredict</span>

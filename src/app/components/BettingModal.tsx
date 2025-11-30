@@ -525,7 +525,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
               rel="noopener noreferrer"
               className="inline-block px-4 py-2 bg-blue-600 text-white rounded font-semibold shadow hover:bg-blue-700 transition-colors border border-blue-700 flex items-center gap-2"
             >
-              <img src="/solana-logo.svg" alt="Stellar Logo" style={{ height: '20px', width: '20px' }} />
+              <img src="/xlm.png" alt="Stellar Logo" style={{ height: '20px', width: '20px' }} />
               Get Stellar Testnet XLM
             </a>
           </div>

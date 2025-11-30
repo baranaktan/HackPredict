@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { createMarketWithMetadata, testContractConnection } from '../lib/contractsApi';
-import { usePrivy } from '@privy-io/react-auth';
+import { createMarketWithMetadata, testContractConnection, initializeContract } from '../lib/contractsApi';
+import { useAuth } from '../context/AuthContext';
 
 interface MarketCreationModalProps {
   isOpen: boolean;
@@ -44,7 +44,7 @@ export default function MarketCreationModal({
   onClose, 
   onMarketCreated 
 }: MarketCreationModalProps) {
-  const { authenticated } = usePrivy();
+  const { isLoggedIn, walletAddress } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     question: '',
     title: '',
@@ -55,7 +55,9 @@ export default function MarketCreationModal({
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const [connectionTest, setConnectionTest] = useState<any>(null);
+  const [initializeResult, setInitializeResult] = useState<{ success: boolean; error?: string; txHash?: string } | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -99,6 +101,7 @@ export default function MarketCreationModal({
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
+    setConnectionTest(null);
     try {
       const result = await testContractConnection();
       setConnectionTest(result);
@@ -111,10 +114,30 @@ export default function MarketCreationModal({
     }
   };
 
+  const handleInitializeContract = async () => {
+    setIsInitializing(true);
+    setInitializeResult(null);
+    try {
+      const result = await initializeContract();
+      setInitializeResult(result);
+      if (result.success) {
+        // Refresh connection test after successful initialization
+        setTimeout(() => {
+          handleTestConnection();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Initialize failed:', error);
+      setInitializeResult({ success: false, error: String(error) });
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!authenticated) {
+    if (!isLoggedIn || !walletAddress) {
       alert('Please connect your wallet first');
       return;
     }
@@ -214,14 +237,44 @@ export default function MarketCreationModal({
         <div className="px-4 sm:px-6 py-4 bg-yellow-50 border-b border-gray-200">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-xs sm:text-sm font-semibold text-gray-900">Contract Connection</h3>
-            <button
-              onClick={handleTestConnection}
-              disabled={isTestingConnection}
-              className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded disabled:opacity-50 transition-colors"
-            >
-              {isTestingConnection ? 'Testing...' : 'Test Connection'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleTestConnection}
+                disabled={isTestingConnection}
+                className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded disabled:opacity-50 transition-colors"
+              >
+                {isTestingConnection ? 'Testing...' : 'Test Connection'}
+              </button>
+              <button
+                onClick={handleInitializeContract}
+                disabled={isInitializing || !isLoggedIn || !walletAddress}
+                className="text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded disabled:opacity-50 transition-colors"
+              >
+                {isInitializing ? 'Initializing...' : 'Initialize Contract'}
+              </button>
+            </div>
           </div>
+          {initializeResult && (
+            <div className={`text-xs p-2 rounded mt-2 ${
+              initializeResult.success 
+                ? 'bg-green-100 text-green-800 border border-green-200' 
+                : 'bg-red-100 text-red-800 border border-red-200'
+            }`}>
+              {initializeResult.success ? (
+                <div>
+                  <div>✅ Contract initialized successfully!</div>
+                  {initializeResult.txHash && (
+                    <div className="text-xs mt-1">Tx: {initializeResult.txHash.slice(0, 16)}...</div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <div>❌ Initialization failed</div>
+                  <div>{initializeResult.error}</div>
+                </div>
+              )}
+            </div>
+          )}
           {connectionTest && (
             <div className={`text-xs p-2 rounded mt-2 ${
               connectionTest.isConnected 
@@ -346,7 +399,7 @@ export default function MarketCreationModal({
             </button>
             <button
               type="submit"
-              disabled={isLoading || !authenticated}
+              disabled={isLoading || !isLoggedIn || !walletAddress}
               className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm transition-colors"
             >
               {isLoading ? (
@@ -364,7 +417,7 @@ export default function MarketCreationModal({
             </button>
           </div>
 
-          {!authenticated && (
+          {(!isLoggedIn || !walletAddress) && (
             <p className="text-gray-600 text-xs sm:text-sm text-center mt-2">
               Please connect your wallet to create markets
             </p>
