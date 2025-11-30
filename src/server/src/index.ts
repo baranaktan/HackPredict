@@ -24,7 +24,6 @@ import videoUploadRoutes from './routes/videoUpload';
 import marketRoutes from './routes/markets';
 import marketsMetadataRoutes from './routes/marketsMetadata';
 import leaderboardRoutes from './routes/leaderboard';
-import { ensureDatabaseExists } from './database/dbInitialization';
 
 dotenv.config();
 
@@ -39,9 +38,9 @@ const io = new Server(server, {
   },
   path: '/api/socket/io/',
   transports: ['websocket'],
-  pingInterval: 25000, // 25 seconds
-  pingTimeout: 20000, // 20 seconds
-  connectTimeout: 20000, // 20 seconds
+  pingInterval: 25000,
+  pingTimeout: 20000,
+  connectTimeout: 20000,
   cookie: {
     name: 'livestakes_io',
     httpOnly: true,
@@ -50,19 +49,16 @@ const io = new Server(server, {
   }
 });
 
-// Initialize the database
+// Initialize Supabase database (run migrations)
 async function setupDatabase() {
   try {
-    await ensureDatabaseExists();
     await runMigrations();
-    console.log('Database initialized successfully');
+    console.log('✅ Supabase database ready');
   } catch (error) {
-    console.error('Database initialization failed:', error);
-    process.exit(1);
+    console.error('❌ Database initialization failed:', error);
   }
 }
 
-// Initialize database on startup
 setupDatabase();
 
 // Middleware

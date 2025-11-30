@@ -473,7 +473,7 @@ Environment Variables Required:
   - GCP_CLIENT_EMAIL  
   - GCP_PRIVATE_KEY
   - GCP_BUCKET_NAME (optional, defaults to 'livestakes-videos')
-  - POSTGRES_* variables for database connection
+  - DATABASE_URL (Supabase connection string)
   - OPENAI_API_KEY (required for AI analysis)
     `);
     process.exit(1);
