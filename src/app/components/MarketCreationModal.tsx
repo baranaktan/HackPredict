@@ -254,7 +254,7 @@ export default function MarketCreationModal({
               value={formData.question}
               onChange={handleInputChange}
               placeholder="e.g., Will the presenter finish the demo without bugs?"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm text-white"
               disabled={isLoading}
             />
             {errors.question && (
@@ -271,7 +271,7 @@ export default function MarketCreationModal({
               value={formData.title}
               onChange={handleInputChange}
               placeholder="e.g., Bug-free Demo Prediction"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm text-white"
               disabled={isLoading}
             />
             {errors.title && (
@@ -288,7 +288,7 @@ export default function MarketCreationModal({
               onChange={handleInputChange}
               placeholder="Additional details about the market..."
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm text-white"
               disabled={isLoading}
             />
             {errors.description && (
@@ -303,7 +303,7 @@ export default function MarketCreationModal({
               name="category"
               value={formData.category}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm text-white"
               disabled={isLoading}
             >
               {CATEGORIES.map(category => (
@@ -323,7 +323,7 @@ export default function MarketCreationModal({
               value={formData.tags}
               onChange={handleInputChange}
               placeholder="hackathon, demo, coding (comma separated)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm text-white"
               disabled={isLoading}
             />
             {errors.tags && (
