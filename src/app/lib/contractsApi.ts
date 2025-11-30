@@ -11,7 +11,8 @@ import {
   Operation,
   Account,
   Transaction,
-  Keypair
+  Keypair,
+  StrKey
 } from '@stellar/stellar-sdk';
 import * as StellarSdk from '@stellar/stellar-sdk';
 
@@ -540,14 +541,14 @@ export async function createMarket(
     console.log('📝 Creating market with caller:', userAddress);
     
     // Convert parameters to ScVal
-    // Empty arrays need special handling
-    const livestreamIdsScVal = livestreamIds.length > 0
-      ? nativeToScVal(livestreamIds.map(id => BigInt(id)), { type: 'vec' })
-      : xdr.ScVal.scvVec([]);
+    // Build ScVal arrays manually for better type safety
+    const livestreamIdsScVal = xdr.ScVal.scvVec(
+      livestreamIds.map(id => xdr.ScVal.scvU64(xdr.Uint64.fromString(String(id))))
+    );
     const questionScVal = nativeToScVal(question, { type: 'string' });
-    const livestreamTitlesScVal = livestreamTitles.length > 0
-      ? nativeToScVal(livestreamTitles, { type: 'vec' })
-      : xdr.ScVal.scvVec([]);
+    const livestreamTitlesScVal = xdr.ScVal.scvVec(
+      livestreamTitles.map(title => nativeToScVal(title, { type: 'string' }))
+    );
     
     // Prediction Market contract WASM hash (deployed contract)
     // This is the hash of the prediction-market contract that was built
@@ -807,26 +808,153 @@ export async function createMarket(
       // Try to extract the market address from the result
       let marketAddress = '';
       
+      console.log('📋 Transaction result data:', JSON.stringify(txResultData, null, 2));
+      
+      // Method 1: Try returnValue first
       if (txResultData?.returnValue) {
-        // The return value should be the market address
-        // It's in SCVal format, we need to decode it
         try {
-          // Try to decode the address from the return value
-          // The format is usually an ScVal Address type
-          const returnVal = txResultData.returnValue;
-          // For now, just use the raw value or hash as identifier
-          marketAddress = txHash; // Fallback to tx hash
+          const returnValXdr = txResultData.returnValue;
+          console.log('Return value XDR:', returnValXdr);
           
-          // Try to parse if it looks like an address
-          if (typeof returnVal === 'string' && returnVal.startsWith('C')) {
-            marketAddress = returnVal;
+          const scVal = xdr.ScVal.fromXDR(returnValXdr, 'base64');
+          console.log('ScVal type:', scVal.switch().name);
+          
+          if (scVal.switch().name === 'scvAddress') {
+            const addressScVal = scVal.address();
+            if (addressScVal.switch().name === 'scAddressTypeContract') {
+              const contractId = addressScVal.contractId();
+              marketAddress = StrKey.encodeContract(contractId);
+              console.log('✅ Extracted contract address from returnValue:', marketAddress);
+            } else {
+              const accountId = addressScVal.accountId();
+              marketAddress = StrKey.encodeEd25519PublicKey(accountId.ed25519());
+              console.log('✅ Extracted account address from returnValue:', marketAddress);
+            }
           }
         } catch (parseErr) {
-          console.warn('Could not parse return value:', parseErr);
-          marketAddress = txHash;
+          console.warn('Could not parse returnValue:', parseErr);
         }
-      } else {
-        marketAddress = txHash; // Use tx hash as fallback identifier
+      }
+      
+      // Method 2: Try resultMetaXdr to find deployed contract
+      if (!marketAddress && txResultData?.resultMetaXdr) {
+        try {
+          console.log('🔍 Trying to extract from resultMetaXdr...');
+          const meta = xdr.TransactionMeta.fromXDR(txResultData.resultMetaXdr, 'base64');
+          const metaSwitch = meta.switch() as any;
+          
+          // Look for contract creation in sorobanMeta (v3)
+          if (metaSwitch.name === 'v3' || metaSwitch === 3 || String(metaSwitch) === '3') {
+            const v3 = meta.v3();
+            const sorobanMeta = v3.sorobanMeta();
+            
+            if (sorobanMeta) {
+              // Check return value in sorobanMeta
+              const returnVal = sorobanMeta.returnValue();
+              const returnValSwitch = returnVal.switch();
+              console.log('SorobanMeta return value type:', returnValSwitch.name);
+              
+              if (returnValSwitch.name === 'scvAddress') {
+                const addressScVal = returnVal.address();
+                const addrSwitch = addressScVal.switch();
+                if (addrSwitch.name === 'scAddressTypeContract') {
+                  const contractId = addressScVal.contractId();
+                  marketAddress = StrKey.encodeContract(contractId);
+                  console.log('✅ Extracted contract address from sorobanMeta:', marketAddress);
+                }
+              }
+              
+              // Also check diagnostic events for contract deployment
+              if (!marketAddress) {
+                const events = sorobanMeta.events();
+                for (let i = 0; i < events.length; i++) {
+                  const event = events[i];
+                  const contractIdBuf = event.contractId();
+                  if (contractIdBuf) {
+                    const eventContractId = StrKey.encodeContract(contractIdBuf);
+                    console.log(`Event ${i} contract ID:`, eventContractId);
+                  }
+                }
+              }
+            }
+          }
+        } catch (metaErr) {
+          console.warn('Could not parse resultMetaXdr:', metaErr);
+        }
+      }
+      
+      // Method 3: Try resultXdr - extract contract address directly
+      if (!marketAddress && txResultData?.resultXdr) {
+        try {
+          console.log('🔍 Trying to extract from resultXdr:', txResultData.resultXdr);
+          
+          // Decode base64 to buffer
+          const resultBuffer = Buffer.from(txResultData.resultXdr, 'base64');
+          console.log('Result buffer length:', resultBuffer.length);
+          
+          // XDR structure for invokeHostFunction success returning Address:
+          // [fee:8][inner_result:8][discriminant:4][op_type:4][addr_type:4][contract_id:32][padding:4]
+          // Contract ID starts at byte offset 28
+          
+          if (resultBuffer.length >= 60) {
+            // Extract 32 bytes starting at offset 28
+            const contractIdBytes = resultBuffer.subarray(28, 60);
+            console.log('Contract ID bytes:', contractIdBytes.toString('hex'));
+            
+            // Verify it's not all zeros
+            const isValid = contractIdBytes.some(b => b !== 0);
+            if (isValid) {
+              try {
+                marketAddress = StrKey.encodeContract(contractIdBytes);
+                console.log('✅ Extracted contract address from resultXdr:', marketAddress);
+              } catch (encodeErr) {
+                console.warn('Failed to encode contract ID:', encodeErr);
+              }
+            }
+          }
+          
+          // Fallback: Try SDK parsing if direct extraction failed
+          if (!marketAddress) {
+            try {
+              const result = xdr.TransactionResult.fromXDR(resultBuffer);
+              const innerResult = result.result();
+              console.log('Inner result switch:', innerResult.switch().name);
+              
+              const opResults = innerResult.results();
+              for (let i = 0; i < opResults.length; i++) {
+                const opResult = opResults[i];
+                const opResultValue = opResult.value() as any;
+                
+                if (opResultValue?.switch?.()?.name === 'invokeHostFunction') {
+                  const invokeResult = opResultValue.invokeHostFunctionResult();
+                  if (invokeResult.switch().name === 'invokeHostFunctionSuccess') {
+                    const scVal = invokeResult.success();
+                    if (scVal.switch().name === 'scvAddress') {
+                      const addr = scVal.address();
+                      if (addr.switch().name === 'scAddressTypeContract') {
+                        marketAddress = StrKey.encodeContract(addr.contractId());
+                        console.log('✅ Extracted from SDK parsing:', marketAddress);
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (sdkErr) {
+              console.warn('SDK parsing also failed:', sdkErr);
+            }
+          }
+        } catch (resultErr) {
+          console.warn('Could not parse resultXdr:', resultErr);
+        }
+      }
+      
+      // Final fallback - this should NOT happen if contract returns Address
+      if (!marketAddress) {
+        console.error('❌ Could not extract contract address from any source!');
+        console.error('returnValue:', txResultData?.returnValue);
+        console.error('resultMetaXdr exists:', !!txResultData?.resultMetaXdr);
+        console.error('resultXdr:', txResultData?.resultXdr);
+        marketAddress = txHash; // Last resort fallback
       }
       
       console.log('✅ Market created! TX Hash:', txHash);

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
+import { useAuth } from '../context/AuthContext';
 import {
   getMarketInfo,
   placeBet,
@@ -40,10 +40,13 @@ const BettingModal: React.FC<BettingModalProps> = ({
   markets,
   market,
 }) => {
-  const { ready, authenticated, user } = usePrivy();
+  // Use Stellar wallet auth instead of Privy
+  const { isLoggedIn, walletAddress, ready, login } = useAuth();
+  const authenticated = isLoggedIn;
   
   // Market state
   const [selectedMarketId, setSelectedMarketId] = useState<number | null>(null);
+  const [selectedMarketAddress, setSelectedMarketAddress] = useState<string | null>(null);
   const [marketInfo, setMarketInfo] = useState<MarketInfo | null>(null);
   const [userBets, setUserBets] = useState<UserBets>({ livestreamIds: [], amounts: [] });
   const [marketOdds, setMarketOdds] = useState<MarketOdds>({ livestreamBets: [] });
@@ -83,6 +86,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
       if (market && market.contract_address) {
         console.log(`✅ Found market ${market.contract_address}`);
         setSelectedMarketId(market.id);
+        setSelectedMarketAddress(market.contract_address);
         setShowCreateMarket(false);
       } else {
         console.log(`⚠️ No market found for livestream ${livestreamId}, showing create market interface`);
@@ -98,13 +102,13 @@ const BettingModal: React.FC<BettingModalProps> = ({
 
   // Load market info when market selection changes
   useEffect(() => {
-    if (selectedMarketId && isOpen) {
+    if (selectedMarketAddress && isOpen) {
       loadMarketInfo();
     }
-  }, [selectedMarketId, isOpen]);
+  }, [selectedMarketAddress, isOpen]);
 
   const loadMarketInfo = async () => {
-    if (!selectedMarketId) return;
+    if (!selectedMarketAddress) return;
     
     try {
       setIsLoading(true);
@@ -136,10 +140,10 @@ const BettingModal: React.FC<BettingModalProps> = ({
         });
       } else {
         // Fallback to on-chain data
-        console.log(`📡 Fetching on-chain data for market ${selectedMarketId}...`);
+        console.log(`📡 Fetching on-chain data for market ${selectedMarketAddress}...`);
         const [info, odds] = await Promise.all([
-          getMarketInfo(selectedMarketId.toString()),
-          getMarketOdds(selectedMarketId.toString())
+          getMarketInfo(selectedMarketAddress),
+          getMarketOdds(selectedMarketAddress)
         ]);
         
         setMarketInfo(info);
@@ -147,9 +151,9 @@ const BettingModal: React.FC<BettingModalProps> = ({
       }
       
       // Always try to load user bets from blockchain
-      if (authenticated && user?.wallet?.address) {
+      if (authenticated && walletAddress) {
         try {
-          const bets = await getUserBets(selectedMarketId.toString(), user.wallet.address);
+          const bets = await getUserBets(selectedMarketAddress, walletAddress);
           setUserBets(bets);
         } catch (error) {
           console.warn('Could not load user bets:', error);
@@ -192,7 +196,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
   };
 
   const handlePlaceBet = async () => {
-    if (!selectedMarketId || !authenticated || !user?.wallet?.address || !livestreamId) {
+    if (!selectedMarketAddress || !authenticated || !walletAddress || !livestreamId) {
       setError('Please connect your wallet and select a project to bet on');
       return;
     }
@@ -204,7 +208,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
 
       console.log(`🎯 Placing bet: ${betAmount} XLM on livestream ${livestreamId} in market ${selectedMarketId}`);
       
-      const txHash = await placeBet(selectedMarketId.toString(), livestreamId, betAmount);
+      const txHash = await placeBet(selectedMarketAddress, livestreamId, betAmount);
       
       setSuccess(`Bet placed successfully! 🎉`);
       // Refresh market info
@@ -221,7 +225,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
   };
 
   const handleCreateMarket = async () => {
-    if (!authenticated || !user?.wallet?.address || !newMarketQuestion.trim()) {
+    if (!authenticated || !walletAddress || !newMarketQuestion.trim()) {
       setError('Please connect your wallet and enter a market question');
       return;
     }
@@ -261,7 +265,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
   };
 
   const handleClaimPayout = async () => {
-    if (!selectedMarketId || !authenticated || !user?.wallet?.address) {
+    if (!selectedMarketAddress || !authenticated || !walletAddress) {
       setError('Please connect your wallet to claim payout');
       return;
     }
@@ -273,7 +277,7 @@ const BettingModal: React.FC<BettingModalProps> = ({
 
       console.log(`💰 Claiming payout from market ${selectedMarketId}`);
       
-      const txHash = await claimPayout(selectedMarketId.toString());
+      const txHash = await claimPayout(selectedMarketAddress);
       
       setSuccess(`Payout claimed successfully! 💰`);
       // Refresh market info
@@ -349,7 +353,12 @@ const BettingModal: React.FC<BettingModalProps> = ({
                 id="market-select"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm bg-white text-gray-900 placeholder-gray-400"
                 value={selectedMarketId ?? ''}
-                onChange={e => setSelectedMarketId(Number(e.target.value))}
+                onChange={e => {
+                  const marketId = Number(e.target.value);
+                  const selectedMkt = markets.find(m => m.id === marketId);
+                  setSelectedMarketId(marketId);
+                  setSelectedMarketAddress(selectedMkt?.contract_address || null);
+                }}
               >
                 <option value="" disabled>Select a market...</option>
                 {markets.map(market => (
@@ -547,7 +556,10 @@ const BettingModal: React.FC<BettingModalProps> = ({
             <div className="text-center py-4">
               <div className="text-4xl mb-2">🔒</div>
               <p className="text-gray-600 text-xs sm:text-sm mb-3">Connect your wallet to place bets</p>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs sm:text-sm">
+              <button 
+                onClick={login}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs sm:text-sm"
+              >
                 Connect Wallet
               </button>
             </div>
