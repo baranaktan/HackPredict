@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockMarkets, MarketDataType } from '../../data/markets';
+
+// NO MOCK DATA - Only real data from backend API
 
 export async function GET(request: NextRequest) {
   try {
-    // Fetch data from your backend API
-    const response = await fetch('http://localhost:3334/api/livestreams', {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+    
+    // Fetch data from backend API
+    const response = await fetch(`${API_BASE_URL}/markets/metadata`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -17,31 +20,14 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     
-    // Transform livestream data to market data format
-    const markets: MarketDataType[] = data.data?.map((livestream: any) => ({
-      id: livestream.id,
-      title: livestream.title,
-      description: livestream.description || `Prediction market for ${livestream.title}`,
-      creator_wallet_address: livestream.creator_wallet_address,
-      status: livestream.status,
-      start_time: livestream.start_time,
-      end_time: livestream.end_time,
-      view_count: livestream.view_count || 0,
-      category: livestream.category || 'general',
-      totalVolume: 0,
-      participants: 0,
-      odds: "1.0x",
-      prediction: "Pending",
-      result: undefined,
-      sponsor: undefined,
-      website: undefined,
-      prizes: []
-    })) || mockMarkets;
-
-    return NextResponse.json({ data: markets });
+    // Return market data from backend
+    return NextResponse.json({ data: data.markets || [] });
   } catch (error) {
     console.error('Error fetching markets:', error);
-    // Return mock data as fallback
-    return NextResponse.json({ data: mockMarkets });
+    // Return empty array instead of mock data
+    return NextResponse.json({ 
+      data: [], 
+      error: 'Backend API unavailable. Please ensure the server is running.' 
+    }, { status: 503 });
   }
 } 

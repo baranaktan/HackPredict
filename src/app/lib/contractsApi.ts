@@ -17,7 +17,7 @@ import * as StellarSdk from '@stellar/stellar-sdk';
 
 // Type aliases for better TypeScript support
 type ScVal = xdr.ScVal;
-import { mockLivestreams } from '../data/livestreams';
+// NO MOCK DATA - Only real data from backend API
 import type { LivestreamDataType, MarketDataType } from '../../types/types';
 
 // API Base URL for backend calls
@@ -831,23 +831,22 @@ export async function createMarket(
       
       console.log('✅ Market created! TX Hash:', txHash);
       
-      // Store market metadata
+      // Store market metadata directly in Supabase
       try {
-        const metadataResponse = await fetch(`${API_BASE_URL}/markets/metadata`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const { supabase } = await import('./supabase');
+        const { error: insertError } = await supabase
+          .from('market_metadata')
+          .insert({
             contract_address: marketAddress,
+            description: title,
+            category: category || 'general',
             creator_wallet_address: userAddress,
-            description,
-            category,
-            tags,
-            livestream_ids: livestreamIds
-          }),
-        });
+          });
 
-        if (!metadataResponse.ok) {
-          console.warn('Failed to store market metadata');
+        if (insertError) {
+          console.warn('Failed to store market metadata:', insertError.message);
+        } else {
+          console.log('Market metadata stored in Supabase successfully');
         }
       } catch (metadataError) {
         console.warn('Error storing market metadata:', metadataError);
@@ -925,27 +924,49 @@ export async function createMarketWithMetadata(
     const marketAddress = result.marketAddress!;
     console.log('Market created on-chain:', marketAddress);
     
-    // Store additional metadata off-chain
+    // Store additional metadata in Supabase
     if (description || category || tags) {
       try {
-        const response = await fetch(`${API_BASE_URL}/markets`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contract_address: marketAddress,
-            creator_wallet_address: creatorAddress,
-            description,
-            category,
-            tags
-          }),
-        });
-
-        if (!response.ok) {
-          console.warn('Failed to store market metadata, but market was created successfully');
+        const { supabase } = await import('./supabase');
+        
+        // Check if already exists (from createMarket function)
+        const { data: existing } = await supabase
+          .from('market_metadata')
+          .select('id')
+          .eq('contract_address', marketAddress)
+          .single();
+        
+        if (existing) {
+          // Update existing record
+          const { error: updateError } = await supabase
+            .from('market_metadata')
+            .update({
+              description: description || question,
+              category: category || 'general',
+            })
+            .eq('contract_address', marketAddress);
+          
+          if (updateError) {
+            console.warn('Failed to update market metadata:', updateError.message);
+          } else {
+            console.log('Market metadata updated in Supabase');
+          }
         } else {
-          console.log('Market metadata stored successfully');
+          // Insert new record
+          const { error: insertError } = await supabase
+            .from('market_metadata')
+            .insert({
+              contract_address: marketAddress,
+              description: description || question,
+              category: category || 'general',
+              creator_wallet_address: creatorAddress,
+            });
+          
+          if (insertError) {
+            console.warn('Failed to store market metadata:', insertError.message);
+          } else {
+            console.log('Market metadata stored in Supabase');
+          }
         }
       } catch (metadataError) {
         console.warn('Failed to store market metadata:', metadataError);
@@ -1591,53 +1612,38 @@ export interface MarketLeaderboardEntry {
   livestreamTitles: string[];
 }
 
-// Fetch market leaderboard data based on betting activity
+// Fetch market leaderboard data based on betting activity (Direct Supabase)
 export async function fetchMarketLeaderboardData(limit: number = 20): Promise<MarketLeaderboardEntry[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/leaderboard/markets?limit=${limit}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch market leaderboard data');
+    // Import supabase client dynamically to avoid circular dependencies
+    const { supabase } = await import('./supabase');
+    
+    const { data, error } = await supabase
+      .from('market_metadata')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return [];
     }
 
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to fetch market leaderboard data');
-    }
-
-    return data.leaderboard;
+    return (data || []).map((market: any, idx: number) => ({
+      rank: idx + 1,
+      marketAddress: market.contract_address,
+      question: market.description || 'Market',
+      totalPool: '0', // Would need to query from blockchain
+      totalBettors: 0, // Would need to query from blockchain
+      category: market.category || 'general',
+      state: MarketState.Open,
+      createdAt: market.created_at ? new Date(market.created_at).getTime() : Date.now(),
+      livestreamTitles: []
+    }));
   } catch (error) {
     console.error('Error fetching market leaderboard data:', error);
-    // Return mock data as fallback
-    return generateMockMarketLeaderboardData(limit);
+    return [];
   }
-}
-
-// Generate mock market leaderboard data for development/testing
-function generateMockMarketLeaderboardData(limit: number): MarketLeaderboardEntry[] {
-  const mockData: MarketLeaderboardEntry[] = [];
-  
-  for (let i = 0; i < limit; i++) {
-    const totalPool = (Math.random() * 1000 + 50).toFixed(2);
-    const totalBettors = Math.floor(Math.random() * 50) + 5;
-    const categories = ['hackathon', 'gaming', 'technology', 'education', 'entertainment'];
-    const category = categories[Math.floor(Math.random() * categories.length)];
-    const states = [MarketState.Open, MarketState.Closed, MarketState.Resolved];
-    const state = states[Math.floor(Math.random() * states.length)];
-    
-    mockData.push({
-      rank: i + 1,
-      marketAddress: `G${Math.random().toString(36).substring(2, 56)}`,
-      question: `Will this ${category} project win the hackathon?`,
-      totalPool,
-      totalBettors,
-      category,
-      state,
-      createdAt: Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000),
-      livestreamTitles: [`${category.charAt(0).toUpperCase() + category.slice(1)} Project ${i + 1}`]
-    });
-  }
-  
-  return mockData.sort((a, b) => parseFloat(b.totalPool) - parseFloat(a.totalPool));
 }
 
 // Livestream leaderboard entry interface
@@ -1656,26 +1662,41 @@ export interface LivestreamLeaderboardEntry {
   market_address: string;
 }
 
-// Fetch livestream leaderboard data from API
+// Fetch livestream leaderboard data (Direct Supabase)
 export async function fetchLivestreamLeaderboardData(limit: number = 20): Promise<LivestreamLeaderboardEntry[]> {
-  // Use canonical mockLivestreams, rank by view_count (descending)
-  const sorted = [...mockLivestreams]
-    .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
-    .slice(0, limit);
-  return sorted.map((stream, idx) => ({
-    rank: idx + 1,
-    livestreamId: stream.id || idx + 1,
-    title: stream.title,
-    creatorUsername: stream.creator_wallet_address,
-    totalBets: 0, // You can update this if you have bet data
-    totalVolume: '0', // You can update this if you have volume data
-    category: stream.category || 'general',
-    status: stream.status,
-    viewCount: stream.view_count || 0,
-    createdAt: stream.created_at ? new Date(stream.created_at).getTime() : Date.now(),
-    thumbnailUrl: stream.thumbnail_url || '',
-    market_address: stream.market_address || '',
-  }));
+  try {
+    // Import supabase client dynamically to avoid circular dependencies
+    const { supabase } = await import('./supabase');
+    
+    const { data, error } = await supabase
+      .from('livestreams')
+      .select('*')
+      .order('view_count', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return [];
+    }
+      
+    return (data || []).map((stream: any, idx: number) => ({
+      rank: idx + 1,
+      livestreamId: stream.id || idx + 1,
+      title: stream.title,
+      creatorUsername: stream.creator_wallet_address,
+      totalBets: 0,
+      totalVolume: '0',
+      category: stream.category || 'general',
+      status: stream.status,
+      viewCount: stream.view_count || 0,
+      createdAt: stream.created_at ? new Date(stream.created_at).getTime() : Date.now(),
+      thumbnailUrl: stream.thumbnail_url || '',
+      market_address: stream.market_address || '',
+    }));
+  } catch (error) {
+    console.error('Error fetching livestream leaderboard:', error);
+    return [];
+  }
 }
 
 // Type declaration for Stellar Wallet Kit

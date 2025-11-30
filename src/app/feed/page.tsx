@@ -28,8 +28,8 @@ function getRandomInt(min: number, max: number) {
 
 async function fetchRealComments(livestreamId: number) {
   try {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-    const response = await fetch(`${API_BASE_URL}/api/livestreams/${livestreamId}/comments`);
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+    const response = await fetch(`${API_BASE_URL}/livestreams/${livestreamId}/comments`);
     if (response.ok) {
       const result = await response.json();
       return result.comments || [];
@@ -40,8 +40,8 @@ async function fetchRealComments(livestreamId: number) {
 
 async function fetchRealLikes(livestreamId: number) {
   try {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-    const response = await fetch(`${API_BASE_URL}/api/livestreams/${livestreamId}/likes`);
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+    const response = await fetch(`${API_BASE_URL}/livestreams/${livestreamId}/likes`);
     if (response.ok) {
       const result = await response.json();
       return result.likes || [];

@@ -37,7 +37,7 @@ export interface LivestreamDataType {
   creator_wallet_address: string;
   stream_url?: string;
   thumbnail_url?: string;
-  status: 'scheduled' | 'active' | 'ended';
+  status: 'scheduled' | 'active' | 'ended' | 'live';
   start_time?: string;
   end_time?: string;
   view_count?: number;

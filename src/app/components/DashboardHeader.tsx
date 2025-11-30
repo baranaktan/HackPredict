@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 import MarketCreationModal from './MarketCreationModal';
 import MarketAssociationModal from './MarketAssociationModal';
+import { supabase } from '../lib/supabase';
 
 // Video Upload Modal Component
 interface VideoUploadModalProps {
@@ -33,23 +34,20 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, us
     setIsLoadingMarkets(true);
     setError(null);
     try {
-      // Fetch markets from backend API
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-      const response = await fetch(`${API_BASE_URL}/markets/metadata?limit=50`);
+      // Fetch markets directly from Supabase
+      const { data, error: supabaseError } = await supabase
+        .from('market_metadata')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
       
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.markets) {
-          setAvailableMarkets(result.markets);
-        } else {
-          throw new Error('Failed to fetch markets from backend');
-        }
-      } else {
-        throw new Error('Backend API unavailable');
+      if (supabaseError) {
+        throw new Error(supabaseError.message);
       }
+      
+      setAvailableMarkets(data || []);
     } catch (error) {
       console.error('Error fetching markets:', error);
-      // Fallback: try to get markets from contract (commented for now, can be implemented later)
       setError('Unable to load available markets. Please try again.');
       setAvailableMarkets([]);
     } finally {
@@ -61,13 +59,23 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, us
     const file = event.target.files?.[0];
     if (file) {
       // Check if it's a video file
-      if (file.type.startsWith('video/')) {
-        setSelectedFile(file);
-        setError(null);
-      } else {
+      if (!file.type.startsWith('video/')) {
         setError('Please select a video file (MP4, MOV, etc.)');
         setSelectedFile(null);
+        return;
       }
+      
+      // Check file size (max 50MB for Supabase free tier)
+      const MAX_SIZE_MB = 50;
+      const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+      if (file.size > MAX_SIZE_BYTES) {
+        setError(`Video too large! Max ${MAX_SIZE_MB}MB allowed. Your file: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
+        setSelectedFile(null);
+        return;
+      }
+      
+      setSelectedFile(file);
+      setError(null);
     }
   };
 
@@ -82,34 +90,62 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, us
     setSuccess(null);
 
     try {
-      const formData = new FormData();
-      formData.append('video', selectedFile);
-      formData.append('market_address', marketAddress);
-      formData.append('creator_wallet_address', userWalletAddress);
+      // Generate unique filename
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `video_${userWalletAddress.slice(0, 8)}_${Date.now()}.${fileExt}`;
+      const filePath = `videos/${fileName}`;
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-      const response = await fetch(`${API_BASE_URL}/upload-video-simple`, {
-        method: 'POST',
-        body: formData,
-      });
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('videos')
+        .upload(filePath, selectedFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      const result = await response.json();
-
-      if (result.success) {
-        setSuccess('Video uploaded successfully! 🎉');
-        // Reset form
-        setSelectedFile(null);
-        setMarketAddress('');
-        // Close modal after delay
-        setTimeout(() => {
-          handleClose();
-        }, 2000);
-      } else {
-        setError(result.error || 'Upload failed');
+      if (uploadError) {
+        throw new Error(uploadError.message);
       }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('videos')
+        .getPublicUrl(filePath);
+
+      const videoUrl = urlData.publicUrl;
+
+      // Create livestream record in database
+      const { data: livestreamData, error: dbError } = await supabase
+        .from('livestreams')
+        .insert({
+          title: selectedFile.name.replace(/\.[^/.]+$/, ''),
+          description: `Uploaded video for market ${marketAddress}`,
+          creator_wallet_address: userWalletAddress,
+          stream_url: videoUrl,
+          status: 'ended',
+          start_time: new Date().toISOString(),
+          end_time: new Date().toISOString(),
+          category: 'general',
+          market_address: marketAddress,
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        throw new Error(dbError.message);
+      }
+
+      setSuccess('Video uploaded successfully! 🎉');
+      // Reset form
+      setSelectedFile(null);
+      setMarketAddress('');
+      // Close modal after delay
+      setTimeout(() => {
+        handleClose();
+      }, 2000);
     } catch (error) {
       console.error('Upload error:', error);
-      setError('Network error during upload');
+      setError(error instanceof Error ? error.message : 'Upload failed');
     } finally {
       setIsUploading(false);
     }

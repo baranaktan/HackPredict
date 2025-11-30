@@ -70,8 +70,8 @@ const Profile: React.FC<ProfileProps> = ({
 
   const fetchUserProfile = async (walletAddress: string) => {
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-      const response = await fetch(`${API_BASE_URL}/api/users/${walletAddress}`);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+      const response = await fetch(`${API_BASE_URL}/users/${walletAddress}`);
       
       if (response.ok) {
         const result = await response.json();
@@ -87,8 +87,8 @@ const Profile: React.FC<ProfileProps> = ({
 
   const createUserProfile = async (walletAddress: string) => {
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-      const response = await fetch(`${API_BASE_URL}/api/users`, {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+      const response = await fetch(`${API_BASE_URL}/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,8 +113,8 @@ const Profile: React.FC<ProfileProps> = ({
     if (!user?.wallet?.address) return;
     
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-      const response = await fetch(`${API_BASE_URL}/api/users/${user.wallet.address}`, {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+      const response = await fetch(`${API_BASE_URL}/users/${user.wallet.address}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -138,8 +138,8 @@ const Profile: React.FC<ProfileProps> = ({
     if (!user?.wallet?.address || !userProfile) return;
     
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-      const response = await fetch(`${API_BASE_URL}/api/users/${user.wallet.address}`, {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+      const response = await fetch(`${API_BASE_URL}/users/${user.wallet.address}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -51,8 +51,8 @@ const LivestreamInteractions: React.FC<LivestreamInteractionsProps> = ({
 
   const fetchLikes = async () => {
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-      const response = await fetch(`${API_BASE_URL}/api/livestreams/${livestreamId}/likes`);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+      const response = await fetch(`${API_BASE_URL}/livestreams/${livestreamId}/likes`);
       
       if (response.ok) {
         const result = await response.json();
@@ -74,8 +74,8 @@ const LivestreamInteractions: React.FC<LivestreamInteractionsProps> = ({
 
   const fetchComments = async () => {
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-      const response = await fetch(`${API_BASE_URL}/api/livestreams/${livestreamId}/comments`);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+      const response = await fetch(`${API_BASE_URL}/livestreams/${livestreamId}/comments`);
       
       if (response.ok) {
         const result = await response.json();
@@ -88,8 +88,8 @@ const LivestreamInteractions: React.FC<LivestreamInteractionsProps> = ({
 
   const getUserProfile = async (walletAddress: string) => {
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-      const response = await fetch(`${API_BASE_URL}/api/users/${walletAddress}`);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+      const response = await fetch(`${API_BASE_URL}/users/${walletAddress}`);
       
       if (response.ok) {
         const result = await response.json();
@@ -115,18 +115,18 @@ const LivestreamInteractions: React.FC<LivestreamInteractionsProps> = ({
         return;
       }
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
       
       if (isLiked) {
         // Unlike
-        await fetch(`${API_BASE_URL}/api/likes/${userProfile.id}/${livestreamId}`, {
+        await fetch(`${API_BASE_URL}/likes/${userProfile.id}/${livestreamId}`, {
           method: 'DELETE',
         });
         setIsLiked(false);
         setLikes(prev => prev.filter(like => like.user_id !== userProfile.id));
       } else {
         // Like
-        const response = await fetch(`${API_BASE_URL}/api/likes`, {
+        const response = await fetch(`${API_BASE_URL}/likes`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -171,8 +171,8 @@ const LivestreamInteractions: React.FC<LivestreamInteractionsProps> = ({
         return;
       }
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
-      const response = await fetch(`${API_BASE_URL}/api/comments`, {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+      const response = await fetch(`${API_BASE_URL}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

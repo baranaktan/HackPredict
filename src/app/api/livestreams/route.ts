@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockLivestreams, LivestreamDataType } from '../../data/livestreams';
+
+// NO MOCK DATA - Only real data from backend API
 
 export async function GET(request: NextRequest) {
   try {
-    // Fetch data from your backend API
-    const response = await fetch('http://localhost:3334/api/livestreams', {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334/api';
+    
+    // Fetch data from backend API
+    const response = await fetch(`${API_BASE_URL}/livestreams`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -18,7 +21,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     
     // Transform backend data to match our frontend interface
-    const livestreams: LivestreamDataType[] = data.data?.map((livestream: any) => ({
+    const livestreams = data.data?.map((livestream: any) => ({
       id: livestream.id,
       title: livestream.title,
       description: livestream.description,
@@ -34,12 +37,15 @@ export async function GET(request: NextRequest) {
       updated_at: livestream.updated_at,
       avatar: livestream.avatar || "https://res.cloudinary.com/storagemanagementcontainer/image/upload/v1751747169/default-avatar_ynttwb.png",
       github_url: livestream.github_url || "https://github.com"
-    })) || mockLivestreams;
+    })) || [];
 
     return NextResponse.json({ data: livestreams });
   } catch (error) {
     console.error('Error fetching livestreams:', error);
-    // Return mock data as fallback
-    return NextResponse.json({ data: mockLivestreams });
+    // Return empty array instead of mock data
+    return NextResponse.json({ 
+      data: [], 
+      error: 'Backend API unavailable. Please ensure the server is running.' 
+    }, { status: 503 });
   }
 } 
