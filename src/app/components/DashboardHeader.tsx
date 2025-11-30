@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePrivy } from '@privy-io/react-auth';
+import { useAuth } from '../context/AuthContext';
 import MarketCreationModal from './MarketCreationModal';
 import MarketAssociationModal from './MarketAssociationModal';
 
@@ -327,7 +327,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   liveStreams = 0,
   onMarketCreated
 }) => {
-  const { authenticated, user } = usePrivy();
+  const { isLoggedIn, walletAddress } = useAuth();
   const [showMarketCreation, setShowMarketCreation] = useState(false);
   const [showVideoUpload, setShowVideoUpload] = useState(false);
 
@@ -385,7 +385,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </button>
             <button 
               onClick={() => setShowVideoUpload(true)}
-              disabled={!authenticated}
+              disabled={!isLoggedIn}
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-yellow-50 px-2 sm:px-3 py-1 border border-black rounded-none uppercase text-xs transition-colors"
             >
               <span className="hidden sm:inline">📹 Upload Video</span>
@@ -414,7 +414,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       <VideoUploadModal
         isOpen={showVideoUpload}
         onClose={() => setShowVideoUpload(false)}
-        userWalletAddress={user?.wallet?.address}
+        userWalletAddress={walletAddress || undefined}
       />
     </>
   );
